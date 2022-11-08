@@ -1,8 +1,7 @@
-from flask import Flask, request, Response
+from flask import Flask, request
 import json
 import os
 import torch
-import torch.nn as nn
 from torchvision import transforms
 from mnist_model import CustomNet
 import matplotlib.pyplot as plt
@@ -15,8 +14,7 @@ app = Flask(__name__)
 def save_image():
     if request.method == 'POST':
         photo = request.files["photo"]
-        photo_str = photo.read()
-        p_image = process_image(photo_str)
+        p_image = process_image(photo)
         label = inference(p_image)
 
         print(type(photo))
@@ -30,8 +28,8 @@ def save_image():
         
         return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
 
-def process_image(photo_str):
-    # photo_str = photo.read()
+def process_image(photo):
+    photo_str = photo.read()
     photo_bytes = np.frombuffer(photo_str, np.uint8)
     
     image = cv2.imdecode(photo_bytes, cv2.IMREAD_COLOR)
@@ -41,8 +39,8 @@ def process_image(photo_str):
     grey = cv2.GaussianBlur(grey, (21, 21), 0)
     thresh = cv2.adaptiveThreshold(grey.copy(), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 381, 10)
     contours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # preprocessed_digits = []
-    # for each contour, add the bounded image to the list
+
+    # find the max contour (i.e the digit)
     max = 0
     for c in contours:
         x,y,w,h = cv2.boundingRect(c)
@@ -61,8 +59,6 @@ def process_image(photo_str):
             # Padding the digit with 5 pixels of black color (zeros) in each side to finally produce the image of (28, 28)
             padded_digit = np.pad(resized_digit, ((5,5),(5,5)), "constant", constant_values=0)
         
-        # Adding the preprocessed digit to the list of preprocessed digits
-        # preprocessed_digits.append(padded_digit)
     plt.imshow(digit, cmap="gray")
     plt.show()
     return padded_digit
@@ -72,7 +68,6 @@ def inference(p_image):
     plt.imshow(p_image, cmap="gray")
     plt.show()
     trans = transforms.ToTensor()
-    # p_image = p_image.reshape([28,28])
     p_image_tensor = trans(p_image)
     p_image_tensor = torch.unsqueeze(p_image_tensor, 0)
     p_image_tensor = p_image_tensor.to(device) 
