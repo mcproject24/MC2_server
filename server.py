@@ -52,13 +52,10 @@ def process_image(photo):
             resized_digit = cv2.resize(digit, (18,18))
             padded_digit = np.pad(resized_digit, ((5,5),(5,5)), "constant", constant_values=0)
         
-
     return wr_image, padded_digit
 
 def inference(p_image):
 
-    plt.imshow(p_image, cmap="gray")
-    plt.show()
     trans = transforms.ToTensor()
     p_image_tensor = trans(p_image)
     p_image_tensor = torch.unsqueeze(p_image_tensor, 0)
