@@ -8,22 +8,23 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 app = Flask(__name__)
-
+UPLOAD_FOLDER = os.getcwd()
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/predict", methods = ['POST'])
 def save_image():
     if request.method == 'POST':
         photo = request.files["photo"]
-        p_image = process_image(photo)
+        og_image, p_image = process_image(photo)
         label = inference(p_image)
 
-        print(type(photo))
         if not os.path.exists(label):
             os.makedirs(label)
-            photo.save("./"+label+"/picture1.jpg")
+            cv2.imwrite(os.path.join(os.path.join(app.config['UPLOAD_FOLDER'], label), 'picture1.jpg'), og_image)
         else:
             count = len(os.listdir(label)) + 1
-            photo.save("./"+label+"/picture"+str(count)+".jpg")
+            filename = "picture" + str(count) + ".jpg"
+            cv2.imwrite(os.path.join(os.path.join(app.config['UPLOAD_FOLDER'], label), filename), og_image)
             
         
         return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
@@ -33,7 +34,7 @@ def process_image(photo):
     photo_bytes = np.frombuffer(photo_str, np.uint8)
     
     image = cv2.imdecode(photo_bytes, cv2.IMREAD_COLOR)
-    # image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    wr_image = image.copy()
 
     grey = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
     grey = cv2.GaussianBlur(grey, (21, 21), 0)
@@ -59,9 +60,8 @@ def process_image(photo):
             # Padding the digit with 5 pixels of black color (zeros) in each side to finally produce the image of (28, 28)
             padded_digit = np.pad(resized_digit, ((5,5),(5,5)), "constant", constant_values=0)
         
-    plt.imshow(digit, cmap="gray")
-    plt.show()
-    return padded_digit
+
+    return wr_image, padded_digit
 
 def inference(p_image):
 
