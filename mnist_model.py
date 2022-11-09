@@ -4,7 +4,6 @@ import torch.nn as nn
 from torchvision import datasets
 from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
-# import matplotlib.pyplot as plt
 
 
 class CustomNet(nn.Module):
@@ -14,7 +13,6 @@ class CustomNet(nn.Module):
     self.conv_layer_1 = nn.Sequential(
         nn.Conv2d(1, 16, 3, 1, 1),
         nn.ReLU(),
-        # nn.MaxPool2d(kernel_size = 2)
         nn.BatchNorm2d(16)
     )
 
